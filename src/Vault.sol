@@ -5,69 +5,91 @@ import "../lib/openzeppelin-contracts/contracts/access/AccessControl.sol";
 import "../lib/openzeppelin-contracts/contracts/utils/ReentrancyGuard.sol";
 
 contract Vault is AccessControl, ReentrancyGuard {
-    bytes32 public constant LENDER_ROLE = keccak256("LENDER_ROLE");
+    bytes32 public constant GOVERNANCE_ROLE = keccak256("GOVERNANCE_ROLE");
 
-    struct Loan {
+    struct Deposit {
         uint256 amount;
-        uint256 interestRate;
-        uint256 duration;
-        uint256 startTime;
-        address borrower;
-        bool repaid;
+        uint256 timestamp;
     }
 
-    mapping(uint256 => Loan) public loans;
-    uint256 public loanCounter;
+    mapping(address => Deposit) public deposits;
+    mapping(address => uint256) public governanceTokens;
 
-    event LoanCreated(
-        uint256 loanId,
-        address indexed borrower,
-        uint256 amount,
-        uint256 interestRate,
-        uint256 duration
-    );
-    event LoanRepaid(uint256 loanId, address indexed borrower);
+    uint256 public totalDeposits;
+
+    event Deposited(address indexed user, uint256 amount);
+    event GovernanceAllocated(address indexed user, uint256 governanceTokens);
+    event Withdrawn(address indexed user, uint256 amount);
+    event CreditScoreChecked(address indexed user, uint256 score);
 
     constructor() {
-        _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
+        _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
+        _grantRole(GOVERNANCE_ROLE, msg.sender);
     }
 
-    function createLoan(
-        uint256 amount,
-        uint256 interestRate,
-        uint256 duration
-    ) external nonReentrant {
-        loanCounter++;
-        loans[loanCounter] = Loan(
-            amount,
-            interestRate,
-            duration,
-            block.timestamp,
-            msg.sender,
-            false
-        );
-        emit LoanCreated(
-            loanCounter,
-            msg.sender,
-            amount,
-            interestRate,
-            duration
-        );
+    // Fallback to accept direct Ether transfers
+    receive() external payable {
+        deposits[msg.sender].amount += msg.value;
+        deposits[msg.sender].timestamp = block.timestamp;
+        totalDeposits += msg.value;
+
+        emit Deposited(msg.sender, msg.value);
     }
 
-    function repayLoan(uint256 loanId) external payable nonReentrant {
-        Loan storage loan = loans[loanId];
-        require(msg.sender == loan.borrower, "Not your loan");
-        require(!loan.repaid, "Loan already repaid");
-        uint256 totalAmount = loan.amount +
-            ((loan.amount * loan.interestRate) / 100);
-        require(msg.value == totalAmount, "Incorrect repayment amount");
+    // Deposit funds into the vault
+    function deposit() external payable nonReentrant {
+        require(msg.value > 0, "Deposit amount must be greater than zero");
+        deposits[msg.sender].amount += msg.value;
+        deposits[msg.sender].timestamp = block.timestamp;
+        totalDeposits += msg.value;
 
-        loan.repaid = true;
-        emit LoanRepaid(loanId, msg.sender);
+        emit Deposited(msg.sender, msg.value);
     }
 
-    function getLoan(uint256 loanId) external view returns (Loan memory) {
-        return loans[loanId];
+    function getDeposit(address user) external view returns (Deposit memory) {
+        return deposits[user];
+    }
+
+    // Allocate governance rights based on deposit amount
+    function allocateGovernance(
+        address user
+    ) external onlyRole(GOVERNANCE_ROLE) {
+        uint256 depositAmount = deposits[user].amount;
+        require(depositAmount > 0, "User has no deposits");
+
+        uint256 governanceAmount = depositAmount / 1 ether; // Example: 1 governance token per 1 ether deposited
+        governanceTokens[user] += governanceAmount;
+
+        emit GovernanceAllocated(user, governanceAmount);
+    }
+
+    // Withdraw funds with DAO-defined rules
+    function withdraw(uint256 amount) external nonReentrant {
+        Deposit storage userDeposit = deposits[msg.sender];
+        require(userDeposit.amount >= amount, "Insufficient balance");
+        require(
+            block.timestamp >= userDeposit.timestamp + 1 weeks,
+            "Funds are locked for 1 week"
+        ); // Example rule
+
+        userDeposit.amount -= amount;
+        totalDeposits -= amount;
+        payable(msg.sender).transfer(amount);
+
+        emit Withdrawn(msg.sender, amount);
+    }
+
+    // Integrate credit score (optional)
+    function integrateCreditScore(
+        address user,
+        uint256 creditScore
+    ) external onlyRole(GOVERNANCE_ROLE) {
+        // Example: Emit an event or make decisions based on credit score
+        emit CreditScoreChecked(user, creditScore);
+    }
+
+    // View governance token balance
+    function getGovernanceTokens(address user) external view returns (uint256) {
+        return governanceTokens[user];
     }
 }
