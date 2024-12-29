@@ -1,66 +1,158 @@
-## Foundry
+# Vault Smart Contract Project
 
-**Foundry is a blazing fast, portable and modular toolkit for Ethereum application development written in Rust.**
+This project implements a **Vault Smart Contract** deployed on the **Sepolia Testnet**. It includes:
 
-Foundry consists of:
+- **Solidity Smart Contract**: Vault with deposit, withdraw, and governance token features.
+- **React Frontend**: Simple UI to interact with the contract.
+- **Deployment Scripts**: Automated deployment and integration with the frontend.
 
--   **Forge**: Ethereum testing framework (like Truffle, Hardhat and DappTools).
--   **Cast**: Swiss army knife for interacting with EVM smart contracts, sending transactions and getting chain data.
--   **Anvil**: Local Ethereum node, akin to Ganache, Hardhat Network.
--   **Chisel**: Fast, utilitarian, and verbose solidity REPL.
+## **Table of Contents**
 
-## Documentation
+- [Prerequisites](#prerequisites)
+- [Setup](#setup)
+- [Environment Variables](#environment-variables)
+- [Scripts](#scripts)
+- [Testing and Usage](#testing-and-usage)
+- [Governance Tokens](#governance-tokens)
+- [Future Enhancements](#future-enhancements)
 
-https://book.getfoundry.sh/
+---
 
-## Usage
+## **Prerequisites**
 
-### Build
+Make sure you have the following installed:
 
-```shell
-$ forge build
+- **Node.js** (v18 or later)
+- **Yarn** (v1.22 or later)
+- **Foundry** (latest version) - Smart contract framework
+- **MetaMask** - For interacting with the deployed contract
+
+---
+
+## **Setup**
+
+1. **Clone the Repository:**
+
+```bash
+git clone https://github.com/your-repository/vault-project.git
+cd vault-project
 ```
 
-### Test
+2. **Backend Setup (Foundry):**
 
-```shell
-$ forge test
+```bash
+cd backend
+forge install
+forge build
 ```
 
-### Format
+3. **Frontend Setup (React):**
 
-```shell
-$ forge fmt
+```bash
+cd ../frontend
+yarn install
 ```
 
-### Gas Snapshots
+---
 
-```shell
-$ forge snapshot
+## **Environment Variables**
+
+### Create a `.env` file in both backend and frontend folders:
+
+**Backend (.env):**
+
+```
+SEPOLIA_RPC_URL=https://sepolia.infura.io/v3/YOUR_INFURA_PROJECT_ID
+PRIVATE_KEY=0xYOUR_WALLET_PRIVATE_KEY
+ETHERSCAN_API_KEY=YOUR_ETHERSCAN_API_KEY
 ```
 
-### Anvil
+**Frontend (.env):**
 
-```shell
-$ anvil
+```
+REACT_APP_CONTRACT_ADDRESS=0xYourDeployedContractAddress
 ```
 
-### Deploy
+---
 
-```shell
-$ forge script script/Counter.s.sol:CounterScript --rpc-url <your_rpc_url> --private-key <your_private_key>
+## **Scripts**
+
+### **Backend Scripts**
+
+**Deploy Contract:**
+
+```bash
+forge script script/Deploy.s.sol --rpc-url $SEPOLIA_RPC_URL --private-key $PRIVATE_KEY --broadcast
 ```
 
-### Cast
+**Export ABI and Address (Manual):**
 
-```shell
-$ cast <subcommand>
+```bash
+forge inspect Vault abi > ../frontend/src/abi.json
 ```
 
-### Help
+### **Frontend Scripts**
 
-```shell
-$ forge --help
-$ anvil --help
-$ cast --help
+**Setup Frontend:**
+
+```bash
+yarn setup
 ```
+
+**Start Frontend Development Server:**
+
+```bash
+yarn start
+```
+
+---
+
+## **Testing and Usage**
+
+1. **Connect MetaMask** to the Sepolia Test Network.
+2. **Deposit Funds:** Enter the amount in ETH and click **Deposit**.
+3. **Check Unlock Date:** Displays the deposit timestamp and unlock date for withdrawals.
+4. **Withdraw Funds:** Withdraw funds after the **1-week lock period**.
+5. **Governance Tokens:** Tokens are manually allocated (see below).
+
+---
+
+## **Governance Tokens**
+
+### **Manual Allocation**
+
+Open the browser console and use:
+
+```javascript
+await window.contract.allocateGovernance('0xYourAccountAddress');
+```
+
+### **Check Token Balance**
+
+```javascript
+const tokens = await window.contract.getGovernanceTokens(
+  '0xYourAccountAddress'
+);
+console.log('Tokens:', tokens.toString());
+```
+
+---
+
+## **Future Enhancements**
+
+- **Automatic Governance Allocation:** Tokens are assigned automatically on deposit.
+- **Voting System Integration:** Allow governance tokens to be used for voting.
+- **Token Transfers:** Enable transfer of governance tokens between users.
+- **Better UX:** More responsive design and enhanced error handling.
+
+---
+
+## **Contributing**
+
+Feel free to fork this repository and submit pull requests with improvements or feature additions.
+
+---
+
+## **License**
+
+This project is licensed under the [MIT License](LICENSE).
