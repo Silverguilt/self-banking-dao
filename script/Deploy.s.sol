@@ -6,18 +6,17 @@ import "../src/Vault.sol";
 
 contract DeployVault is Script {
     function run() external {
-        // Load private key from environment variables
+        // Load private key
         uint256 privateKey = vm.envUint("PRIVATE_KEY");
 
-        // Start the broadcast (transaction execution)
+        // Start broadcast
         vm.startBroadcast(privateKey);
 
-        // Deploy the Vault contract
+        // Deploy the contract
         Vault vault = new Vault();
-
-        // Stop broadcasting
-        vm.stopBroadcast();
-
         console.log("Vault deployed at:", address(vault));
+
+        // Stop broadcast
+        vm.stopBroadcast();
     }
 }
