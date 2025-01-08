@@ -63,20 +63,27 @@ contract Vault is AccessControl, ReentrancyGuard {
         emit GovernanceAllocated(user, governanceAmount);
     }
 
-    // Withdraw funds with DAO-defined rules
+    // Penalty rate: 2% for early withdrawal
+    uint256 public constant PENALTY_RATE = 200; // 2% = 200 / 10,000
+
     function withdraw(uint256 amount) external nonReentrant {
         Deposit storage userDeposit = deposits[msg.sender];
         require(userDeposit.amount >= amount, "Insufficient balance");
-        require(
-            block.timestamp >= userDeposit.timestamp + 1 weeks,
-            "Funds are locked for 1 week"
-        ); // Example rule
+
+        uint256 penalty = 0;
+
+        if (block.timestamp < userDeposit.timestamp + 1 weeks) {
+            // Apply penalty if withdrawn early
+            penalty = (amount * PENALTY_RATE) / 10000;
+        }
+
+        uint256 finalAmount = amount - penalty;
 
         userDeposit.amount -= amount;
         totalDeposits -= amount;
-        payable(msg.sender).transfer(amount);
+        payable(msg.sender).transfer(finalAmount);
 
-        emit Withdrawn(msg.sender, amount);
+        emit Withdrawn(msg.sender, finalAmount);
     }
 
     // Integrate credit score (optional)
