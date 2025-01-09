@@ -36,6 +36,19 @@
   },
   {
     "type": "function",
+    "name": "PENALTY_RATE",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
     "name": "allocateGovernance",
     "inputs": [
       {

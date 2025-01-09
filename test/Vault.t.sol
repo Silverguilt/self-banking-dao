@@ -76,7 +76,7 @@ contract VaultTest is Test {
         vault.deposit{value: depositAmount}();
 
         vm.expectRevert("Funds are locked for 1 week");
-        vault.withdraw(depositAmount); // Pass the correct argument
+        vault.withdraw(depositAmount);
         vm.stopPrank();
     }
 
